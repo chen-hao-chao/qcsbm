@@ -3,6 +3,14 @@ import abc
 import torch
 import numpy as np
 
+# For importance sampling
+def scan(f, init, xs):
+  carry = init
+  ys = []
+  for x in xs:
+    carry, y = f(carry, x)
+    ys.append(y)
+  return carry, torch.stack(ys)
 
 class SDE(abc.ABC):
   """SDE abstract class. Functions are designed for a mini-batch of inputs."""
@@ -162,6 +170,33 @@ class VPSDE(SDE):
     f = torch.sqrt(alpha)[:, None, None, None] * x - x
     G = sqrt_beta
     return f, G
+  
+  def likelihood_importance_cum_weight(self, t, eps=1e-5):
+    exponent1 = 0.5 * eps * (eps - 2) * self.beta_0 - 0.5 * eps ** 2 * self.beta_1
+    exponent2 = 0.5 * t * (t - 2) * self.beta_0 - 0.5 * t ** 2 * self.beta_1
+    term1 = torch.where(torch.abs(exponent1) <= 1e-3, -exponent1, 1. - torch.exp(exponent1))
+    term2 = torch.where(torch.abs(exponent2) <= 1e-3, -exponent2, 1. - torch.exp(exponent2))
+    return 0.5 * (-2 * torch.log(term1) + 2 * torch.log(term2)
+                  + self.beta_0 * (-2 * eps + eps ** 2 - (t - 2) * t)
+                  + self.beta_1 * (-eps ** 2 + t ** 2))
+
+  def sample_importance_weighted_time_for_likelihood(self, shape, quantile=None, eps=1e-5, steps=100):
+    Z = self.likelihood_importance_cum_weight(self.T, eps=eps)
+    if quantile is None:
+      quantile = torch.rand(shape) * Z
+    lb = torch.ones_like(quantile) * eps
+    ub = torch.ones_like(quantile) * self.T
+
+    def bisection_func(carry, idx):
+      lb, ub = carry
+      mid = (lb + ub) / 2.
+      value = self.likelihood_importance_cum_weight(mid, eps=eps)
+      lb = torch.where(value <= quantile, mid, lb)
+      ub = torch.where(value <= quantile, ub, mid)
+      return (lb, ub), idx
+
+    (lb, ub), _ = scan(bisection_func, (lb, ub), torch.arange(0, steps))
+    return (lb + ub) / 2.
 
 
 class subVPSDE(SDE):
@@ -202,6 +237,32 @@ class subVPSDE(SDE):
     shape = z.shape
     N = np.prod(shape[1:])
     return -N / 2. * np.log(2 * np.pi) - torch.sum(z ** 2, dim=(1, 2, 3)) / 2.
+  
+  def likelihood_importance_cum_weight(self, t, eps=1e-5):
+    exponent1 = 0.5 * eps * (eps * self.beta_1 - (eps - 2) * self.beta_0)
+    exponent2 = 0.5 * t * (self.beta_1 * t - (t - 2) * self.beta_0)
+    term1 = np.log(exponent1) if exponent1 <= 1e-3 else np.log(np.exp(exponent1) - 1.)
+    term2 = torch.where(exponent2 <= 1e-3, torch.log(exponent2), torch.log(torch.exp(exponent2) - 1.))
+    return 0.5 * (-4 * term1 + 4 * term2
+                  + (2 * eps - eps ** 2 + t * (t - 2)) * self.beta_0 + (eps ** 2 - t ** 2) * self.beta_1)
+
+  def sample_importance_weighted_time_for_likelihood(self, shape, quantile=None, eps=1e-5, steps=100):
+    Z = self.likelihood_importance_cum_weight(torch.ones(shape[0])*self.T, eps=eps)
+    if quantile is None:
+      quantile = torch.rand(shape) * Z
+    lb = torch.ones_like(quantile) * eps
+    ub = torch.ones_like(quantile) * self.T
+
+    def bisection_func(carry, idx):
+      lb, ub = carry
+      mid = (lb + ub) / 2.
+      value = self.likelihood_importance_cum_weight(mid, eps=eps)
+      lb = torch.where(value <= quantile, mid, lb)
+      ub = torch.where(value <= quantile, ub, mid)
+      return (lb, ub), idx
+
+    (lb, ub), _ = scan(bisection_func, (lb, ub), torch.arange(0, steps))
+    return (lb + ub) / 2.
 
 
 class VESDE(SDE):

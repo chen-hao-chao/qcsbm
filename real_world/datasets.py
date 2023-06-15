@@ -1,24 +1,8 @@
-# coding=utf-8
-# Copyright 2020 The Google Research Authors.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
-# pylint: skip-file
 """Return training and evaluation/test datasets from config files."""
 import jax
 import tensorflow as tf
 import tensorflow_datasets as tfds
-
+import costum_datasets.imagenet
 
 def get_data_scaler(config):
   """Data normalizer. Assume data are always in [0, 1]."""
@@ -99,9 +83,27 @@ def get_dataset(config, uniform_dequantization=False, evaluation=False):
     def resize_op(img):
       img = tf.image.convert_image_dtype(img, tf.float32)
       return tf.image.resize(img, [config.data.image_size, config.data.image_size], antialias=True)
+  
+  elif config.data.dataset == 'CIFAR100':
+    dataset_builder = tfds.builder('cifar100')
+    train_split_name = 'train'
+    eval_split_name = 'test'
+
+    def resize_op(img):
+      img = tf.image.convert_image_dtype(img, tf.float32)
+      return tf.image.resize(img, [config.data.image_size, config.data.image_size], antialias=True)
 
   elif config.data.dataset == 'SVHN':
     dataset_builder = tfds.builder('svhn_cropped')
+    train_split_name = 'train'
+    eval_split_name = 'test'
+
+    def resize_op(img):
+      img = tf.image.convert_image_dtype(img, tf.float32)
+      return tf.image.resize(img, [config.data.image_size, config.data.image_size], antialias=True)
+  
+  elif config.data.dataset == 'MNIST':
+    dataset_builder = tfds.builder('mnist')
     train_split_name = 'train'
     eval_split_name = 'test'
 
@@ -118,6 +120,15 @@ def get_dataset(config, uniform_dequantization=False, evaluation=False):
       img = tf.image.convert_image_dtype(img, tf.float32)
       img = central_crop(img, 140)
       img = resize_small(img, config.data.image_size)
+      return img
+  
+  elif config.data.dataset == 'imagenet':
+    dataset_builder = tfds.builder(config.data.dataset)
+    train_split_name = 'train'
+    eval_split_name = 'validation'
+
+    def resize_op(img):
+      img = tf.image.convert_image_dtype(img, tf.float32)
       return img
 
   elif config.data.dataset == 'LSUN':
@@ -169,7 +180,9 @@ def get_dataset(config, uniform_dequantization=False, evaluation=False):
       if config.data.random_flip and not evaluation:
         img = tf.image.random_flip_left_right(img)
       if uniform_dequantization:
-        img = (tf.random.uniform(img.shape, dtype=tf.float32) + img * 255.) / 256.
+        #img = (tf.random.uniform(img.shape, dtype=tf.float32) + img * 255.) / 256.
+        img = (tf.random.uniform((config.data.image_size, config.data.image_size,
+                                  config.data.num_channels), dtype=tf.float32) + img * 255.) / 256.
 
       return dict(image=img, label=d.get('label', None))
 
@@ -182,7 +195,7 @@ def get_dataset(config, uniform_dequantization=False, evaluation=False):
     if isinstance(dataset_builder, tfds.core.DatasetBuilder):
       dataset_builder.download_and_prepare()
       ds = dataset_builder.as_dataset(
-        split=split, shuffle_files=True, read_config=read_config)
+        split=split, shuffle_files=(not config.training.deterministic), read_config=read_config)
     else:
       ds = dataset_builder.with_options(dataset_options)
     ds = ds.repeat(count=num_epochs)

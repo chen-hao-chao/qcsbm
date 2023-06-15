@@ -1,18 +1,3 @@
-# coding=utf-8
-# Copyright 2020 The Google Research Authors.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
 """All functions and modules related to model definition.
 """
 
@@ -126,7 +111,7 @@ def get_model_fn(model, train=False):
   return model_fn
 
 
-def get_score_fn(sde, model, train=False, continuous=False):
+def get_score_fn(sde, model, train=False, continuous=False, energy=False, create_graph=True, inference=False):
   """Wraps `score_fn` so that the model output corresponds to a real time-dependent score function.
 
   Args:
@@ -172,10 +157,30 @@ def get_score_fn(sde, model, train=False, continuous=False):
       score = model_fn(x, labels)
       return score
 
+    def score_energy_fn(x, t):
+      labels = sde.marginal_prob(torch.zeros_like(x), t)[1]
+      if inference:
+        with torch.enable_grad():
+          x.requires_grad_(True)
+          score = model_fn(x, labels)
+          energy = - 0.5 * torch.sum(torch.square(score), dim=(1,2,3))  / (labels)
+          score_out = torch.autograd.grad(energy.sum(), x)[0]
+        x.requires_grad_(False)
+      else:
+        with torch.enable_grad():
+          x.requires_grad_(True)
+          score = model_fn(x, labels)
+          energy = - 0.5 * torch.sum(torch.square(score), dim=(1,2,3))  / (labels)
+          score_out = torch.autograd.grad(energy.sum(), x, create_graph=create_graph)[0]
+      return score_out
+    
   else:
     raise NotImplementedError(f"SDE class {sde.__class__.__name__} not yet supported.")
 
-  return score_fn
+  if energy:
+    return score_energy_fn
+  else:
+    return score_fn
 
 
 def to_flattened_numpy(x):

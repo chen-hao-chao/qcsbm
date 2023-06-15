@@ -4,13 +4,14 @@ import torch
 
 def get_default_configs():
   config = ml_collections.ConfigDict()
-  # training
+  # training 
   config.training = training = ml_collections.ConfigDict()
   config.training.batch_size = 128
   training.n_iters = 1300001
-  training.snapshot_freq = 50000
+  training.snapshot_freq = 10000
   training.log_freq = 50
   training.eval_freq = 100
+  training.init_step = 600000
   ## store additional checkpoints for preemption in cloud computing environments
   training.snapshot_freq_for_preemption = 10000
   ## produce samples at each snapshot.
@@ -18,6 +19,7 @@ def get_default_configs():
   training.likelihood_weighting = False
   training.continuous = True
   training.reduce_mean = False
+  training.deterministic = False
 
   # sampling
   config.sampling = sampling = ml_collections.ConfigDict()
@@ -25,17 +27,21 @@ def get_default_configs():
   sampling.noise_removal = True
   sampling.probability_flow = False
   sampling.snr = 0.16
+  sampling.last_step_snr = 0.036
+  sampling.batch_size = 9
 
   # evaluation
   config.eval = evaluate = ml_collections.ConfigDict()
   evaluate.begin_ckpt = 9
   evaluate.end_ckpt = 26
-  evaluate.batch_size = 1024
+  evaluate.batch_size = 512
   evaluate.enable_sampling = False
   evaluate.num_samples = 50000
   evaluate.enable_loss = True
   evaluate.enable_bpd = False
   evaluate.bpd_dataset = 'test'
+  evaluate.nearest_k = 3
+  evaluate.total_repeat = 5
 
   # data
   config.data = data = ml_collections.ConfigDict()
@@ -55,6 +61,7 @@ def get_default_configs():
   model.beta_max = 20.
   model.dropout = 0.1
   model.embedding_type = 'fourier'
+  model.energy = False
 
   # optimization
   config.optim = optim = ml_collections.ConfigDict()
@@ -65,6 +72,11 @@ def get_default_configs():
   optim.eps = 1e-8
   optim.warmup = 5000
   optim.grad_clip = 1.
+
+  # loss
+  config.loss = loss = ml_collections.ConfigDict()
+  loss.slices = 1
+  loss.balancing_fac = 0.001
 
   config.seed = 42
   config.device = torch.device('cuda:0') if torch.cuda.is_available() else torch.device('cpu')

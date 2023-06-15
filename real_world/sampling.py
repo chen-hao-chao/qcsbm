@@ -1,20 +1,3 @@
-# coding=utf-8
-# Copyright 2020 The Google Research Authors.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
-# pylint: skip-file
-# pytype: skip-file
 """Various sampling methods."""
 import functools
 
@@ -100,7 +83,10 @@ def get_sampling_fn(config, sde, shape, inverse_scaler, eps):
                                   inverse_scaler=inverse_scaler,
                                   denoise=config.sampling.noise_removal,
                                   eps=eps,
-                                  device=config.device)
+                                  device=config.device,
+                                  energy=config.model.energy,
+                                  atol=config.sampling.atol,
+                                  rtol=config.sampling.rtol)
   # Predictor-Corrector sampling. Predictor-only and Corrector-only samplers are special cases.
   elif sampler_name.lower() == 'pc':
     predictor = get_predictor(config.sampling.predictor.lower())
@@ -116,7 +102,9 @@ def get_sampling_fn(config, sde, shape, inverse_scaler, eps):
                                  continuous=config.training.continuous,
                                  denoise=config.sampling.noise_removal,
                                  eps=eps,
-                                 device=config.device)
+                                 device=config.device,
+                                 energy=config.model.energy,
+                                 last_step_snr=config.sampling.last_step_snr)
   else:
     raise ValueError(f"Sampler name {sampler_name} unknown.")
 
@@ -330,9 +318,9 @@ class NoneCorrector(Corrector):
     return x, x
 
 
-def shared_predictor_update_fn(x, t, sde, model, predictor, probability_flow, continuous):
+def shared_predictor_update_fn(x, t, sde, model, predictor, probability_flow, continuous, energy):
   """A wrapper that configures and returns the update function of predictors."""
-  score_fn = mutils.get_score_fn(sde, model, train=False, continuous=continuous)
+  score_fn = mutils.get_score_fn(sde, model, train=False, continuous=continuous, energy=energy, create_graph=False, inference=True)
   if predictor is None:
     # Corrector-only sampler
     predictor_obj = NonePredictor(sde, score_fn, probability_flow)
@@ -341,9 +329,9 @@ def shared_predictor_update_fn(x, t, sde, model, predictor, probability_flow, co
   return predictor_obj.update_fn(x, t)
 
 
-def shared_corrector_update_fn(x, t, sde, model, corrector, continuous, snr, n_steps):
+def shared_corrector_update_fn(x, t, sde, model, corrector, continuous, snr, n_steps, energy):
   """A wrapper tha configures and returns the update function of correctors."""
-  score_fn = mutils.get_score_fn(sde, model, train=False, continuous=continuous)
+  score_fn = mutils.get_score_fn(sde, model, train=False, continuous=continuous, energy=energy, create_graph=False, inference=True)
   if corrector is None:
     # Predictor-only sampler
     corrector_obj = NoneCorrector(sde, score_fn, snr, n_steps)
@@ -354,7 +342,8 @@ def shared_corrector_update_fn(x, t, sde, model, corrector, continuous, snr, n_s
 
 def get_pc_sampler(sde, shape, predictor, corrector, inverse_scaler, snr,
                    n_steps=1, probability_flow=False, continuous=False,
-                   denoise=True, eps=1e-3, device='cuda'):
+                   denoise=True, eps=1e-3, device='cuda', energy=False, 
+                   last_step_snr=0.036):
   """Create a Predictor-Corrector (PC) sampler.
 
   Args:
@@ -379,13 +368,15 @@ def get_pc_sampler(sde, shape, predictor, corrector, inverse_scaler, snr,
                                           sde=sde,
                                           predictor=predictor,
                                           probability_flow=probability_flow,
-                                          continuous=continuous)
+                                          continuous=continuous,
+                                          energy=energy)
   corrector_update_fn = functools.partial(shared_corrector_update_fn,
                                           sde=sde,
                                           corrector=corrector,
                                           continuous=continuous,
                                           snr=snr,
-                                          n_steps=n_steps)
+                                          n_steps=n_steps,
+                                          energy=energy)
 
   def pc_sampler(model):
     """ The PC sampler funciton.
@@ -405,15 +396,20 @@ def get_pc_sampler(sde, shape, predictor, corrector, inverse_scaler, snr,
         vec_t = torch.ones(shape[0], device=t.device) * t
         x, x_mean = corrector_update_fn(x, vec_t, model=model)
         x, x_mean = predictor_update_fn(x, vec_t, model=model)
+      
+      if denoise:
+        sample = inverse_scaler(x_mean)
+      else:
+        sample = inverse_scaler(x + torch.randn_like(x) * (last_step_snr)** 2 * 2)
 
-      return inverse_scaler(x_mean if denoise else x), sde.N * (n_steps + 1)
+      return sample, sde.N * (n_steps + 1) 
 
   return pc_sampler
 
 
 def get_ode_sampler(sde, shape, inverse_scaler,
-                    denoise=False, rtol=1e-5, atol=1e-5,
-                    method='RK45', eps=1e-3, device='cuda'):
+                    denoise=False, rtol=1e-3, atol=1e-5,
+                    method='RK45', eps=1e-3, device='cuda', energy=False):
   """Probability flow ODE sampler with the black-box ODE solver.
 
   Args:
@@ -433,7 +429,7 @@ def get_ode_sampler(sde, shape, inverse_scaler,
   """
 
   def denoise_update_fn(model, x):
-    score_fn = get_score_fn(sde, model, train=False, continuous=True)
+    score_fn = get_score_fn(sde, model, train=False, continuous=True, energy=energy, create_graph=False)
     # Reverse diffusion predictor for denoising
     predictor_obj = ReverseDiffusionPredictor(sde, score_fn, probability_flow=False)
     vec_eps = torch.ones(x.shape[0], device=x.device) * eps
@@ -442,7 +438,7 @@ def get_ode_sampler(sde, shape, inverse_scaler,
 
   def drift_fn(model, x, t):
     """Get the drift function of the reverse-time SDE."""
-    score_fn = get_score_fn(sde, model, train=False, continuous=True)
+    score_fn = get_score_fn(sde, model, train=False, continuous=True, energy=energy, create_graph=False)
     rsde = sde.reverse(score_fn, probability_flow=True)
     return rsde.sde(x, t)[0]
 

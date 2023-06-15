@@ -1,60 +1,32 @@
-# coding=utf-8
-# Copyright 2020 The Google Research Authors.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
-"""Training and evaluation"""
-
-import run_lib
+"""Entrance file"""
+import run_lib, run_lib_eval
 from absl import app
 from absl import flags
 from ml_collections.config_flags import config_flags
-import logging
-import os
 import tensorflow as tf
+import os
 
 FLAGS = flags.FLAGS
-
-config_flags.DEFINE_config_file(
-  "config", None, "Training configuration.", lock_config=True)
-flags.DEFINE_string("workdir", None, "Work directory.")
-flags.DEFINE_enum("mode", None, ["train", "eval"], "Running mode: train or eval")
-flags.DEFINE_string("eval_folder", "eval",
-                    "The folder name for storing evaluation results")
-flags.mark_flags_as_required(["workdir", "config", "mode"])
-
+config_flags.DEFINE_config_file("config", None, "Training configuration.", lock_config=True)
+flags.DEFINE_enum("mode", None, ["train", "eval"], "Running mode: train or evaluation.")
+flags.DEFINE_string("type", None, "Flag for switching different training / evaluation modes.")
+flags.DEFINE_string("workdir", "checkerboard_qcsbm", "Directory for saving checkpoints and visualized results.")
+flags.DEFINE_string("resultdir", "results", "Directory for saving workdir.")
+flags.DEFINE_string("restore", "results/checkerboard_qcsbm/checkpoints/checkpoint_4000.pth", "The path to a checkpoint file.")
+flags.mark_flags_as_required(["mode"])
 
 def main(argv):
   if FLAGS.mode == "train":
-    # Create the working directory
-    tf.io.gfile.makedirs(FLAGS.workdir)
-    # Set logger so that it outputs to both console and file
-    # Make logging work for both disk and Google Cloud Storage
-    gfile_stream = open(os.path.join(FLAGS.workdir, 'stdout.txt'), 'w')
-    handler = logging.StreamHandler(gfile_stream)
-    formatter = logging.Formatter('%(levelname)s - %(filename)s - %(asctime)s - %(message)s')
-    handler.setFormatter(formatter)
-    logger = logging.getLogger()
-    logger.addHandler(handler)
-    logger.setLevel('INFO')
-    # Run the training pipeline
-    run_lib.train(FLAGS.config, FLAGS.workdir)
+    resultdir = FLAGS.resultdir
+    tf.io.gfile.makedirs(resultdir)
+    tf.io.gfile.makedirs(os.path.join(resultdir, FLAGS.workdir))
+    run_lib.run(FLAGS.config, os.path.join(resultdir, FLAGS.workdir))
   elif FLAGS.mode == "eval":
-    # Run the evaluation pipeline
-    run_lib.evaluate(FLAGS.config, FLAGS.workdir, FLAGS.eval_folder)
+    FLAGS.config.eval.type = FLAGS.type
+    FLAGS.config.eval.restore_path = FLAGS.restore
+    run_lib_eval.run(FLAGS.config)
   else:
-    raise ValueError(f"Mode {FLAGS.mode} not recognized.")
-
+    raise ValueError("Mode {} not recognized.".format(FLAGS.mode))
 
 if __name__ == "__main__":
   app.run(main)

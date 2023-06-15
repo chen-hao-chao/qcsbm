@@ -1,20 +1,3 @@
-# coding=utf-8
-# Copyright 2020 The Google Research Authors.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
-# pylint: skip-file
-# pytype: skip-file
 """Various sampling methods."""
 
 import torch
@@ -38,7 +21,7 @@ def get_div_fn(fn):
 
 
 def get_likelihood_fn(sde, inverse_scaler, hutchinson_type='Rademacher',
-                      rtol=1e-5, atol=1e-5, method='RK45', eps=1e-5):
+                      rtol=1e-4, atol=1e-5, method='RK45', eps=1e-5, energy=False):
   """Create a function to compute the unbiased log-likelihood estimate of a given data point.
 
   Args:
@@ -58,7 +41,7 @@ def get_likelihood_fn(sde, inverse_scaler, hutchinson_type='Rademacher',
 
   def drift_fn(model, x, t):
     """The drift function of the reverse-time SDE."""
-    score_fn = mutils.get_score_fn(sde, model, train=False, continuous=True)
+    score_fn = mutils.get_score_fn(sde, model, train=False, continuous=True, energy=energy, create_graph=True)
     # Probability flow ODE is a special case of Reverse SDE
     rsde = sde.reverse(score_fn, probability_flow=True)
     return rsde.sde(x, t)[0]

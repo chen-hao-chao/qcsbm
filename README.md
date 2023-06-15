@@ -12,6 +12,16 @@ This repository contains the code implementation of the experiments presented in
 - Reproduce the experimental results presented in **Section 6** using the code in [autoencoder_example](/autoencoder_example).
 
 ## Dependencies
+
+(Optional) Launch a docker container:
+
+```sh
+# assume the current directory is the root of this repository
+docker run --rm -it --gpus all --ipc=host -v$(pwd):/app nvcr.io/nvidia/pytorch:20.12-py3
+# inside the docker container, run:
+cd /app
+```
+
 Install the necessary python packages through the following commands:
 
 ```

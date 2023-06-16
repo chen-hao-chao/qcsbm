@@ -5,15 +5,15 @@ This repository contains the code implementation of the experiments presented in
 
 <img src="assets/training.png" alt="training" width="750"/>
 
-## Folder Organizations
-- Reproduce the experimental results presented in **Section 3.1** using the code in [gaussian_example](/gaussian_example).
-- Reproduce the experimental results presented in **Section 3.2** using the code in [2d_examples](/2d_examples).
-- Reproduce the experimental results presented in **Section 5** using the code in [real_world](/real_world).
-- Reproduce the experimental results presented in **Section 6** using the code in [autoencoder_example](/autoencoder_example).
+## Directory Structure
+- Use the code in [qcsbm/gaussian_example](/gaussian_example) to reproduce the experimental results presented in **Section 3.1**.
+- Use the code in [qcsbm/2d_examples](/2d_examples) to reproduce the experimental results presented in **Section 3.2**.
+- Use the code in [qcsbm/real_world](/real_world) to reproduce the experimental results presented in **Section 5**.
+- Use the code in [qcsbm/autoencoder_example](/autoencoder_example) to reproduce the experimental results presented in **Section 6**.
 
 ## Dependencies
 
-(Optional) Launch a docker container:
+**(Optional)** Launch a docker container:
 
 ```sh
 # assume the current directory is the root of this repository
@@ -22,7 +22,7 @@ docker run --rm -it --gpus all --ipc=host -v$(pwd):/app nvcr.io/nvidia/pytorch:2
 cd /app
 ```
 
-Install the necessary python packages through the following commands:
+Install the necessary Python packages through the following commands:
 
 ```
 pip install -r requirements.txt --use-feature=2020-resolver

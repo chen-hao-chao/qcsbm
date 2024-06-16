@@ -1,5 +1,6 @@
 # On Investigating the Conservative Property of Score-Based Generative Models
-[![arXiv](https://img.shields.io/badge/arXiv-2209.12753-b31b1b.svg?style=flat-square)](https://arxiv.org/abs/2209.12753)<br>
+[![arXiv](https://img.shields.io/badge/arXiv-2209.12753-b31b1b.svg?style=flat-square)](https://arxiv.org/abs/2209.12753)
+[![YouTube](https://img.shields.io/badge/YouTube-ff0101?logo=youtube&style=flat-square)](https://youtu.be/8JpeVbwRcyM)
 
 This repository contains the code implementation of the experiments presented in the paper [*On Investigating the Conservative Property of Score-Based Generative Models*](https://arxiv.org/abs/2209.12753).
 

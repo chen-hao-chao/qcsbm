@@ -6,6 +6,8 @@ This repository contains the code implementation of the experiments presented in
 
 <img src="assets/training.png" alt="training" width="750"/>
 
+The project page is available at: <https://chen-hao-chao.github.io/qcsbm/>
+
 ## Directory Structure
 - Use the code in [qcsbm/gaussian_example](/gaussian_example) to reproduce the experimental results presented in **Section 3.1**.
 - Use the code in [qcsbm/2d_examples](/2d_examples) to reproduce the experimental results presented in **Section 3.2**.

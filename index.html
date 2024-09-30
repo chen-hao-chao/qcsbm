@@ -29,11 +29,29 @@
   <script src="./static/js/bulma-slider.min.js"></script>
   <script src="./static/js/index.js"></script>
 
-  <script type="text/x-mathjax-config">
-    MathJax.Hub.Config({tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']]}});
+  <script>
+    MathJax = {
+      tex: {
+        inlineMath: [['$', '$'], ['\\(', '\\)']],
+        displayMath: [['$$','$$'], ['\\[', '\\]']],
+        processEscapes: true,
+        processEnvironments: true,
+        tags: 'ams',
+      },
+      options: {
+        skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre']
+      }
+    };
+  
+    window.addEventListener('load', (event) => {
+        document.querySelectorAll("mjx-container").forEach(function(x){
+          x.parentElement.classList += 'has-jax'})
+      });
+  
   </script>
-  <script type="text/javascript"
-    src="//cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+  <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+  <script type="text/javascript" id="MathJax-script" async
+    src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
   </script>
 
 </head>
@@ -210,27 +228,27 @@
     <div class="columns is-centered has-text-centered">
       <div class="content has-text-justified scroll-wrapper">
         <p>The following paragraphs offer a background introduction and two motivational examples to highlight the importance of preserving this property in score-based and energy-based modeling methods.</p>
-        <p>&#9654<b>Conservativeness:</b> A vector field is said to be conservative if it can be written as the gradient of a scalar-valued function [1].
+        <p>&#9654<b>Conservativeness:</b> A vector field is said to be conservative if it can be written as the gradient of a scalar-valued function <a href="#Ref1">[1]</a>.
           Let $s: \mathbb{R}^D \to \mathbb{R}^D$ be a vector field that accepts $D$-dimensional inputs. 
-          The vector field $s$ is said to be conservative if and only if its Jacobian is symmetric for all input vectors [1]. 
+          The vector field $s$ is said to be conservative if and only if its Jacobian is symmetric for all input vectors <a href="#Ref1">[1]</a>. 
           This condition can be equivalently expressed as the zero-rotation-density condition, as follows:</p>
-        <p class="has-text-centered">$$\bar{ROT}_{ij}s(\mathbf{x})=\frac{\partial s_i(\mathbf{x})}{\partial \mathbf{x}_j}-\frac{\partial s_j(\mathbf{x})}{\partial \mathbf{x}_i}=0,$$</p>
-        <p>where $1\leq i,j\leq D$, $\bar{ROT}_{ij}$ is the rotation density operator [2], and $\frac{\partial}{\partial \mathbf{x}_j} s_i(\mathbf{x})$ corresponds
+        <p class="has-text-centered">$$\bar{\text{ROT}}_{ij}s(\mathbf{x})=\frac{\partial s_i(\mathbf{x})}{\partial \mathbf{x}_j}-\frac{\partial s_j(\mathbf{x})}{\partial \mathbf{x}_i}=0,$$</p>
+        <p>where $1\leq i,j\leq D$, $\bar{\text{ROT}}_{ij}$ is the rotation density operator <a href="#Ref2">[2]</a>, and $\frac{\partial}{\partial \mathbf{x}_j} s_i(\mathbf{x})$ corresponds
           to the gradient of the $i$-th element of $s(\mathbf{x})$ with respect to
-          the $j$-th element of $\mathbf{x}$. $\bar{ROT}_{ij} s(\mathbf{x})$ in the above equation describes the infinitesimal circulation of $s(\mathbf{x})$ around $\mathbf{x}$.
+          the $j$-th element of $\mathbf{x}$. $\bar{\text{ROT}}_{ij} s(\mathbf{x})$ in the above equation describes the infinitesimal circulation of $s(\mathbf{x})$ around $\mathbf{x}$.
           Based on this definition, we can further define the "non-conservativeness" of a vector field as a smooth function that quantifies how a vector field deviates from the conservative property.
           The non-conservativeness is expressed as follows:</p>
-        <p class="has-text-centered">$$\frac{1}{2}\sum_{i,j=1}^D (\bar{ROT}_{ij}s(\mathbf{x}))^2=\frac{1}{2}\|J-J^T\|^2_F,$$</p>
+        <p class="has-text-centered">$$\frac{1}{2}\sum_{i,j=1}^D (\bar{\text{ROT}}_{ij}s(\mathbf{x}))^2=\frac{1}{2}\|J-J^T\|^2_F,$$</p>
         <p>where $J=\frac{\partial}{\partial \mathbf{x}}s(\mathbf{x})$, $\|\cdot\|_F$ is the Frobenius norm. This quantity can be normalized to a range between 0 and 1 by dividing its value by $\frac{1}{2}\|J\|^2_F$.
           We refer to $\frac{1}{2} \|J-J^T \|^2_F$ and $\frac{1}{4}\|J-J^T\|^2_F/\|J\|^2_F$ as the <i style="font-style: italic;">asymmetry</i> (Asym) and <i style="font-style: italic;">normalized asymmetry</i> (NAsym) metrics, respectively, since they measure the asymmetry of the Jacobian matrix.</p>
 
         <p>&#9654<b>Score-based models (SBMs)</b> estimate the gradients of log probability density functions (pdf) (i.e., $\frac{\partial}{\partial \mathbf{x}}\log p(\mathbf{x})$). 
-          SBMs can be adopted to generate samples through Langevin dynamics [3] or reverse diffussion processes [4,5]. There are two types of parameterization methods: constrained SBMs (CSBMs) 
+          SBMs can be adopted to generate samples through Langevin dynamics <a href="#Ref3">[3]</a> or reverse diffussion processes <a href="#Ref4">[4,5]</a>. There are two types of parameterization methods: constrained SBMs (CSBMs) 
           or unconstrained SBMs (USBMs). The former parameterizes the pdf as a Boltzman distribution $p(\mathbf{x};\theta)=\exp (-E(\mathbf{x};\theta)) / Z(\theta)$, where $E(\cdot\,;\theta): \mathbb{R}^D \to \mathbb{R}$ 
           represents a scalar-valued energy function and $Z(\theta)=\int \exp (-E(\mathbf{x}';\theta)) d\mathbf{x}'$ refers to the partition function. The output vector field of a CSBM can be represented as 
           $s(\mathbf{x}; \theta) =\frac{\partial}{\partial \mathbf{x}} \log p(\mathbf{x};\theta)$. This implies that $s(\mathbf{x};\theta)$ is conservative. In other words, $s(\mathbf{x};\theta)$ satisfies the zero-rotation-density 
-          condition, since the mixed second derivatives of $E(\mathbf{x};\theta)$ are equivalent [6], which can be shown as the following:</p>
-        <p class="has-text-centered">$$\bar{ROT}_{ij}s(\mathbf{x})=\frac{\partial^2 E(\mathbf{x})}{\partial \mathbf{x}_i \mathbf{x}_j }-\frac{\partial^2 E(\mathbf{x})}{\partial \mathbf{x}_j \mathbf{x}_i}=0.$$</p>
+          condition, since the mixed second derivatives of $E(\mathbf{x};\theta)$ are equivalent <a href="#Ref6">[6]</a>, which can be shown as the following:</p>
+        <p class="has-text-centered">$$\bar{\text{ROT}}_{ij}s(\mathbf{x})=\frac{\partial^2 E(\mathbf{x})}{\partial \mathbf{x}_i \mathbf{x}_j }-\frac{\partial^2 E(\mathbf{x})}{\partial \mathbf{x}_j \mathbf{x}_i}=0.$$</p>
 
         <p>Unlike CSBMs, USBMs aim to directly parameterize the true score function using a vector-valued function $s(\cdot\,;\theta)$. The conservative property of USBMs
           is not guaranteed, as $s(\cdot\,;\theta)$ does not necessarily correspond to the gradients of a scalar-valued function. Although it
@@ -243,14 +261,14 @@
           on the sampling process by comparing the sampling efficiency of a USBM and a CSBM under the same score-matching error $\varepsilon$. In this
           example, the USBM and the CSBM are denoted as $s_U$ and $s_C$, and the method of constructing $s_U$ and $s_C$ are discussed in our paper.</p>
         
-          <p class="has-text-centered" style="font-style: italic;"><img src="./static/images/langevin_exp.png" style="width:580pt;"/></br>
+          <p id="Fig1" class="has-text-centered" style="font-style: italic;text-align: center;"><img src="./static/images/langevin_exp.png" style="width:580pt;"/></br>
             <b>Figure 1.</b> The visualized examples of (a) the conservative $s_C$ and (b) the non-conservative $s_U$ under different choices of $\varepsilon$. The table on
             the right-hand side reports the results measured using the Asym and NAsym metrics as well as the number of sampling steps. For a better
             data visualization, the vector fields are normalized with the maximum norm of $s_U$ and $s_C$ in each plot.</p>
 
         <p>For an illustrative purpose, we present the visualization of the sampling processes as well as the evaluation results under
-          different choices of $\varepsilon$ for two specific designs of $s_U$ and $s_C$ in Fig. 1 (a) and (b), respectively. As demonstrated
-          in the visualized trajectories in Fig. 1 (b), the existence of the non-conservativeness in $s_U$ incurs rotational vector
+          different choices of $\varepsilon$ for two specific designs of $s_U$ and $s_C$ in <a href="#Fig1">Fig. 1</a> (a) and (b), respectively. As demonstrated
+          in the visualized trajectories in <a href="#Fig1">Fig. 1</a> (b), the existence of the non-conservativeness in $s_U$ incurs rotational vector
           fields tangent to the true score function, leading to inefficient updates during the sampling processes. In addition, the
           evaluation results in terms of Asym, NAsym, and the number of sampling steps further reveal that $s_U$ requires more function
           evaluations during the sampling process than $s_C$ under the same score-matching error $\varepsilon$. The above experimental
@@ -262,19 +280,19 @@
           This design, however, potentially limits the modeling ability of an SBM. In this experiment, we empirically examine the
           influence of architectural flexibility on both the training and sampling. For a fair evaluation, a USBM $s_U$ and
           a CSBM $s_C$ are implemented as neural networks consisting of the same number of parameters. Following the approach
-          described in [8], these two models are represented as follows:</p>
+          described in <a href="#Ref8">[8]</a>, these two models are represented as follows:</p>
         <p class="has-text-centered">$$s_U(\mathbf{x};\theta_U)=\frac{1}{\sigma} (\mathbf{x}-f(\mathbf{x};\theta_U)), \text{and } s_C(\mathbf{x};\theta_C)=-\frac{1}{2\sigma} \frac{\partial\|\mathbf{x}-f (\mathbf{x};\theta_C)\|^2}{\partial \mathbf{x}}.$$</p>
         <p>where $\sigma$ is the noise scale used in denoising score matching, $f: \mathbb{R}^D \to \mathbb{R}^D$ is a neural network, and $\theta_U$ and $\theta_C$ are the parameters of $f$. The former is a USBM similar to that used
-          in [5], while the latter corresponds to its conservative variant explored by [8].</p>
-        <p class="has-text-centered" style="font-style: italic;"><img src="./static/images/example2.png" style="width:480pt;"/></br>
+          in <a href="#Ref5">[5]</a>, while the latter corresponds to its conservative variant explored by <a href="#Ref8">[8]</a>.</p>
+        <p id="Tab1" class="has-text-centered" style="font-style: italic;text-align: center;"><img src="./static/images/example2.png" style="width:480pt;"/></br>
           <b>Table 1.</b> The evaluation results of CSBMs, USBMs, and QCSBMs in terms of their means and confidence intervals of three independent
           runs on the "8-Gaussian," "Spirals," and "Checkerboard" datasets. The arrow symbols $\uparrow / \downarrow$ indicate that higher 
           / lower values correspond to better performance, respectively. (NLL corresponds to Negtive Log Likelihood.)</p>
-        <p>Table 1 reports the results of the above setting. The columns "Score Error" and "NLL" in Table 1 demonstrate that the
+        <p><a href="#Tab1">Table 1</a> reports the results of the above setting. The columns "Score Error" and "NLL" in <a href="#Tab1">Table 1</a> demonstrate that the
           USBMs consistently deliver better modeling performance in comparison to the CSBMs, suggesting that their architectural
           flexibility is indeed beneficial to the training process. On the other hand, due to the potential impact of their nonconservativeness,
           USBMs are unable to consistently achieve superior results on the precision and recall metrics, as shown
-          in the last two columns of Table 1. The above observations thus indicate that the architectural flexibility of a USBM
+          in the last two columns of <a href="#Tab1">Table 1</a>. The above observations thus indicate that the architectural flexibility of a USBM
           is crucial to its score-matching and likelihood-matching abilities. Nevertheless, its non-conservativeness may cause
           negative impacts on its sampling performance as suggested in Example 1.</p>
       </div>
@@ -309,14 +327,14 @@
 
         <p>&#9654<b>Training Process:</b> In this subsection, we walk through the proposed training
           procedure of QCSBMs. The training procedure and the corresponding computational graph is
-          illustrated in Fig. 2. The entire training procedure is divided into five steps, denoted as Steps (1)~(5), respectively. 
+          illustrated in <a href="#Fig2">Fig. 2.</a> The entire training procedure is divided into five steps, denoted as Steps (1)~(5), respectively. 
           Steps (1)~(3) describe the forward propagation process of $L_{Total}$, which is depicted by the
-          black arrows in Fig. 2. Steps (4) and (5) correspond to the backpropagation processes of the two gradient components
+          black arrows in <a href="#Fig2">Fig. 2.</a> Steps (4) and (5) correspond to the backpropagation processes of the two gradient components
           comprising $L_{Total}$, which are named the primary and secondary components, and are depicted as the blue and red
-          arrows in Fig. 2, respectively. The detailed formulations for these two components and the rationale behind such a
+          arrows in <a href="#Fig2">Fig. 2</a>, respectively. The detailed formulations for these two components and the rationale behind such a
           two-step backpropagation process are elaborated in our paper. Please note that the symbol $sg[\cdot]$ used in
-          Fig. 2 represents the "stop gradient" operation, which is adopted to disconnect the computational graph.</p>
-        <p class="has-text-centered" style="font-style: italic;"><img src="./static/images/training.png" style="width:650pt;"/></br>
+          <a href="#Fig2">Fig. 2</a> represents the "stop gradient" operation, which is adopted to disconnect the computational graph.</p>
+        <p id="Fig2" class="has-text-centered" style="font-style: italic;text-align: center;"><img src="./static/images/training.png" style="width:650pt;"/></br>
           <b>Figure 2.</b> The computational graph of $L_{Total}$ in QCSBMs. The "Auto. Diff." blocks represent the operation of differentiating $\mathbf{u}^T s(\mathbf{x};\theta)$,
           where $\mathbf{u}$ is a constant vector with respect to $\mathbf{x}$.</p>
        </div>
@@ -329,43 +347,43 @@
     <div class="columns is-centered has-text-centered">
       <div class="content has-text-justified scroll-wrapper">
         <p>We examine the effectiveness of the proposed QCSBMs on four real-world datasets: CIFAR-10, CIFAR-100, ImageNet-32x32, 
-          and SVHN datasets. We employ the unconstrained architecture as well as the training procedure adopted by NCSN++ (VE) [5] as our baseline, and
+          and SVHN datasets. We employ the unconstrained architecture as well as the training procedure adopted by NCSN++ (VE) <a href="#Ref5">[5]</a> as our baseline, and
           denote this method as "U-NCSN++" in our experiments. On the other hand, C-NCSN++ and QC-NCSN++, which are variants of U-NCSN++ are compared against U-NCSN++ using 
           the NLL, Asym, NAsym metrics. The details of the experimental setups are provided in our paper.</p>
-        <p>&#9654<b>Likelihood and Non-conservativeness Evaluation:</b>  Table 2 reports the evaluation results of U-NCSN++, C-NCSN++,
+        <p>&#9654<b>Likelihood and Non-conservativeness Evaluation:</b>  <a href="#Tab2">Table 2</a> reports the evaluation results of U-NCSN++, C-NCSN++,
           and QC-NCSN++ in terms of NLL, Asym, and NAsym on the four real-world datasets. The evaluation results of C-NCSN++ is inferior to those of U-NCSN++ and QCNCSN++
           on the NLL metric, which aligns with our observation in the motivational examples, suggesting that the modeling flexibility is influential to the final performance on the NLL metric.
           In addition, we observe that the evaluation results on the NLL metric can be further improved when $L_{QC}^{est}$ is incorporated
           into the training process. As demonstrated in the table, QC-NCSN++, which achieves superior performance in terms of Asym and NAsym metrics, also has a noticeable
           improvement on the NLL metric.</p>
-        <p class="has-text-centered" style="font-style: italic;"><img src="./static/images/nll.png" style="width:350pt;"/></br>
+        <p id="Tab2" class="has-text-centered" style="font-style: italic;text-align: center;"><img src="./static/images/nll.png" style="width:350pt;"/></br>
           <b>Table 2.</b> The NLL, Asym, and NAsym of C-NCSN++, U-NCSN++, and QC-NCSN++ evaluated on the CIFAR-10, CIFAR-100,
           ImageNet-32x32, and SVHN datasets.</p>
         
         <p>&#9654<b>The Effects of Non-Conservativeness during Sampling:</b> To further investigate the influence of
           non-conservativeness during the sampling process, we measure Asym and NAsym on the timestep-axis (i.e., $t$-axis), i.e., the nonconservativeness
-          under different timesteps. As shown in Fig. 3, QC-NCSN++ delivers lower Asym and NAsym under different t in comparison to U-NCSN++. 
+          under different timesteps. As shown in <a href="#Fig3">Fig. 3</a>, QC-NCSN++ delivers lower Asym and NAsym under different t in comparison to U-NCSN++. 
           This result suggests that QC-NCSN++ can be less susceptible to its non-conservativeness during the sampling process. In
-          our qualitative comparison presented in Fig. 4 (b), we observe that some examples generated using QC-NCSN++
+          our qualitative comparison presented in <a href="#Fig3">Fig. 3</a> (b), we observe that some examples generated using QC-NCSN++
           have noticeably improved sample quality as compared to U-NCSN++.</p>
-        <p class="has-text-centered" style="font-style: italic;"><img src="./static/images/asym_demo.png" style="width:350pt;"/></br>
+        <p id="Fig3" class="has-text-centered" style="font-style: italic;text-align: center;"><img src="./static/images/asym_demo.png" style="width:350pt;"/></br>
           <b>Figure 3.</b> (a) The evaluation results of Asym and NAsym under different timestep $t$ on the CIFAR-10 dataset. (b) Examples generated
           by U-NCSN++ and QC-NCSN++ with the same random seed. ($T$ represents the total number of timesteps in the sampling process.)</p>
         
         <p>&#9654<b>QCSBM Implemented as a One-Layered Autoencoder:</b> A line of research focuses on a type of SBM constructed as a one-layered
-          autoencoder (e.g., [1]), in which the property of conservativeness can be systematically analyzed. Such an SBM is represented as 
+          autoencoder (e.g., <a href="#Ref1">[1]</a>), in which the property of conservativeness can be systematically analyzed. Such an SBM is represented as 
           $s(\mathbf{x};\theta) = \mathbf{R}h(\mathbf{W}^T\mathbf{x} + \mathbf{b}) + \mathbf{c}$, where $h$
           is an activation function, $\mathbf{b}, \mathbf{c} \in \mathbb{R}^D$, $\mathbf{R},\mathbf{W} \in \mathbb{R}^{D \times H}$ are the weights of $s$ 
-          (i.e., $\theta = \{\mathbf{b}, \mathbf{c}, \mathbf{R}, \mathbf{W}\}$), and $H$ is the width of the hidden-layer. As proved in [1],
+          (i.e., $\theta = \{\mathbf{b}, \mathbf{c}, \mathbf{R}, \mathbf{W}\}$), and $H$ is the width of the hidden-layer. As proved in <a href="#Ref1">[1]</a>,
           the output vector field of $s$ is conservative if and only if $\mathbf{W}\mathbf{R}^T=\mathbf{R}\mathbf{W}^T$. To ensure the conservativeness 
           of such an SBM, a number of previous works follow the concept of CSBMs and restrict the weights of $s$ to be "tied," i.e., $\mathbf{R}=\mathbf{W}$.
           An SBM with tied weights, however, is only a sufficient condition for its conservativeness, rather than a necessary
           one. This implies that there must exist some conservative $s$ that cannot be modeled using tied weights.</p>
-        <p class="has-text-centered" style="font-style: italic;"><img src="./static/images/sym_exp.png" style="width:600pt;"/></br>
+        <p id="Fig4" class="has-text-centered" style="font-style: italic;text-align: center;"><img src="./static/images/sym_exp.png" style="width:600pt;"/></br>
           <b>Figure 4.</b> The trends of $\|\mathbf{W}\mathbf{R}^T-\mathbf{R}\mathbf{W}^T\|_F$ and $\|\mathbf{W}-\mathbf{R}\|_F$ during the minimization process of LQC. The ‘steps’ on the x-axes refer to
           the training steps.</p>
         <p> Instead of enforcing an SBM's weights to be tied, QCSBMs indirectly learn to satisfy the conservativeness
-          condition through minimizing $L_{QC}$. Fig. 4 depicts the trends of $\|\mathbf{W}\mathbf{R}^T-\mathbf{R}\mathbf{W}^T\|_F$
+          condition through minimizing $L_{QC}$. <a href="#Fig4">Fig. 4</a> depicts the trends of $\|\mathbf{W}\mathbf{R}^T-\mathbf{R}\mathbf{W}^T\|_F$
           and $\|\mathbf{W}-\mathbf{R}\|_F$ during the minimization process of $L_{QC}$. As the training progresses, the values of 
           $\|\mathbf{W}\mathbf{R}^T-\mathbf{R}\mathbf{W}^T\|_F$ approach zero, indicating that $s$ learns to output a conservative
           vector field through minimizing $L_{QC}$. In contrast, the values of $\|\mathbf{W}-\mathbf{R}\|_F$ do not decrease to zero, revealing
@@ -392,21 +410,21 @@
 <section class="section" id="reference">
   <div class="container is-max-desktop content">
     <h2 class="title">References</h2>
-    <p>[1] D. J. Im, M. I. Belghazi, and R. Memisevic. Conservativeness of Untied Auto-Encoders. In Proc. the AAAI Conf.
+    <p id="Ref1">[1] D. J. Im, M. I. Belghazi, and R. Memisevic. Conservativeness of Untied Auto-Encoders. In Proc. the AAAI Conf.
       on Artificial Intelligence (AAAI), 2016.</p>
-    <p>[2] E. Glotzl and O. Richters/ Helmholt. Decomposition and Rotation Potentials in n-Dimensional Cartesian Coordinates.
+    <p id="Ref2">[2] E. Glotzl and O. Richters Helmholt. Decomposition and Rotation Potentials in n-Dimensional Cartesian Coordinates.
       arXiv:2012.13157v3 [math.PH], 2021.</p>
-    <p>[3] G. O. Roberts and R. L. Tweedie. Exponential Convergence of Langevin Distributions and Their Discrete Approximations.
+    <p id="Ref3">[3] G. O. Roberts and R. L. Tweedie. Exponential Convergence of Langevin Distributions and Their Discrete Approximations.
       Bernoulli, 2(4):341-363, 1996.</p>
-    <p>[4] J. Ho, A. Jain, and P. Abbeel. Denoising Diffusion Probabilistic Models. In Proc. the Advances in Neural Information
+    <p id="Ref4">[4] J. Ho, A. Jain, and P. Abbeel. Denoising Diffusion Probabilistic Models. In Proc. the Advances in Neural Information
       Processing Systems (NeurIPS), 2020.</p>
-    <p>[5] Y. Song, J. Sohl-Dickstein, D. P. Kingma, A. Kumar, S. Ermon, and B. Poole. Score-Based Generative Modeling
+    <p id="Ref5">[5] Y. Song, J. Sohl-Dickstein, D. P. Kingma, A. Kumar, S. Ermon, and B. Poole. Score-Based Generative Modeling
       through Stochastic Differential Equations. In Proc. Int. Conf. on Learning Representations (ICLR), 2021.</p>
-    <p>[6] G. Alain and Y. Bengio. What Regularized Auto-Encoders Learn from the Data-Generating Distribution. The Journal
+    <p id="Ref6">[6] G. Alain and Y. Bengio. What Regularized Auto-Encoders Learn from the Data-Generating Distribution. The Journal
       of Machine Learning Research (JMLR), 15(1):3563-3593, 2014.</p>
-    <p>[7] S. Saremi, A. Mehrjou, B. Scholkopf, and A. Hyvarinen. Deep Energy Estimator Networks.
+    <p id="Ref7">[7] S. Saremi, A. Mehrjou, B. Scholkopf, and A. Hyvarinen. Deep Energy Estimator Networks.
       arXiv:1805.08306v1 [stat.ML], 2018.</p>
-    <p>[8] T. Salimans and J. Ho. Should EBMs Model the Energy or the Score? In Proc. the Energy Based Models Workshop
+    <p id="Ref8">[8] T. Salimans and J. Ho. Should EBMs Model the Energy or the Score? In Proc. the Energy Based Models Workshop
       at Int. Conf. on Learning Representations (ICLR), 2021.</p>
     </div>
 </section>
